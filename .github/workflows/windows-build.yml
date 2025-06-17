@@ -26,7 +26,7 @@ jobs:
 
       - name: Build executable with PyInstaller
         run: |
-          pyinstaller quicktrade.py --name QuickTrade --noconsole --onefile
+          pyinstaller main.py --name QuickTrade --noconsole --onefile
 
       - name: Upload compiled .exe
         uses: actions/upload-artifact@v4
