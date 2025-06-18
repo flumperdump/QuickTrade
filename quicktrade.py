@@ -1,1 +1,1 @@
-# Entry point for the application
+# Placeholder for QuickTrade main script
