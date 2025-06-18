@@ -43,7 +43,7 @@ class DashboardTab(QWidget):
         super().__init__()
         self.setLayout(QVBoxLayout())
 
-        self.total_label = QLabel("\ud83d\udcb0 Total Asset Value: USD $0.00")
+        self.total_label = QLabel("💰 Total Asset Value: USD $0.00")
         self.total_label.setStyleSheet("font-size: 18px; font-weight: bold;")
         self.layout().addWidget(self.total_label)
 
@@ -52,7 +52,7 @@ class DashboardTab(QWidget):
         self.dust_filter.setChecked(False)
         self.dust_filter.stateChanged.connect(self.update_table)
 
-        self.refresh_button = QPushButton("\ud83d\udd01 Refresh Assets")
+        self.refresh_button = QPushButton("🔁 Refresh Assets")
         self.refresh_button.clicked.connect(self.load_balances)
 
         controls_layout.addWidget(self.dust_filter)
@@ -87,7 +87,57 @@ class DashboardTab(QWidget):
             self.table.setItem(i, 2, QTableWidgetItem(b["asset"]))
             self.table.setItem(i, 3, QTableWidgetItem(f"${b['usd_value']:.2f}"))
             total += b["usd_value"]
-        self.total_label.setText(f"\ud83d\udcb0 Total Asset Value: USD ${total:,.2f}")
+        self.total_label.setText(f"💰 Total Asset Value: USD ${total:,.2f}")
+
+class ExchangeTab(QWidget):
+    def __init__(self, name):
+        super().__init__()
+        self.exchange = name
+        self.setLayout(QVBoxLayout())
+
+        self.layout().addWidget(QLabel(f"Trading Interface for {name}"))
+
+        self.market_selector = QComboBox()
+        self.market_selector.addItems(["BTC/USDT", "ETH/USDT", "SOL/USDT"])
+        self.layout().addWidget(self.market_selector)
+
+        self.order_type = QComboBox()
+        self.order_type.addItems(["Limit", "Market"])
+        self.layout().addWidget(self.order_type)
+
+        self.price_input = QLineEdit()
+        self.price_input.setPlaceholderText("Price")
+        self.layout().addWidget(self.price_input)
+
+        self.amount_input = QLineEdit()
+        self.amount_input.setPlaceholderText("Amount")
+        self.layout().addWidget(self.amount_input)
+
+        button_layout = QHBoxLayout()
+        buy_button = QPushButton("Buy")
+        sell_button = QPushButton("Sell")
+        button_layout.addWidget(buy_button)
+        button_layout.addWidget(sell_button)
+        self.layout().addLayout(button_layout)
+
+        buy_button.clicked.connect(lambda: self.simulate_trade("Buy"))
+        sell_button.clicked.connect(lambda: self.simulate_trade("Sell"))
+
+    def simulate_trade(self, side):
+        pair = self.market_selector.currentText()
+        order_type = self.order_type.currentText()
+        price = self.price_input.text()
+        amount = self.amount_input.text()
+
+        if order_type == "Limit" and not price:
+            QMessageBox.warning(self, "Missing Input", "Please enter a price for a Limit order.")
+            return
+
+        if not amount:
+            QMessageBox.warning(self, "Missing Input", "Please enter an amount.")
+            return
+
+        QMessageBox.information(self, f"{side} Order", f"{side}ing {amount} {pair} as a {order_type} order on {self.exchange}.")
 
 class SettingsTab(QWidget):
     def __init__(self):
@@ -143,9 +193,7 @@ class MainWindow(QMainWindow):
         selected_exchanges = prefs.get("selected_exchanges", EXCHANGES)
 
         for name in selected_exchanges:
-            tab = QWidget()
-            tab.setLayout(QVBoxLayout())
-            tab.layout().addWidget(QLabel(f"Trading UI for {name} will be here"))
+            tab = ExchangeTab(name)
             self.exchange_tabs[name] = tab
             self.tabs.addTab(tab, name)
 
