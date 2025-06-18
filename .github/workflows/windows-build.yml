@@ -25,7 +25,7 @@ jobs:
           pip install pyinstaller PyQt6 requests
           
       - name: Build executable with PyInstaller
-        run: pyinstaller quicktrade.py --name QuickTrade --noconsole --onefile
+        run: pyinstaller quicktrade.py --name QuickTrade --onefile
 
       - name: Upload compiled .exe
         uses: actions/upload-artifact@v4
