@@ -1,1 +1,4 @@
-{"selected_exchanges": ["Binance", "Kraken"]}
+{
+    "theme": "dark",
+    "exchange": "Binance"
+}
