@@ -1,1 +1,1 @@
-# Settings management UI
+# Settings logic placeholder

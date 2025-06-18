@@ -1,2 +1,3 @@
 # QuickTrade
-This is the QuickTrade desktop application.
+
+QuickTrade is a GUI-based crypto trading assistant.
