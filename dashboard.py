@@ -102,11 +102,12 @@ class ExchangeTab(QWidget):
         self.layout().addWidget(self.market_selector)
 
         self.order_type = QComboBox()
-        self.order_type.addItems(["Limit", "Market"])
+        self.order_type.addItems(["Market", "Limit"])
+        self.order_type.setCurrentText("Market")
         self.layout().addWidget(self.order_type)
 
         self.price_input = QLineEdit()
-        self.price_input.setPlaceholderText("Price")
+        self.price_input.setPlaceholderText("Price (Limit Only)")
         self.layout().addWidget(self.price_input)
 
         self.amount_input = QLineEdit()
@@ -153,11 +154,13 @@ class SettingsTab(QWidget):
         self.selected_exchanges = self.user_prefs.get("selected_exchanges", EXCHANGES)
 
         container.layout().addWidget(QLabel("Edit API Keys:"))
-        for exchange in self.selected_exchanges:
-            group_box = QGroupBox(exchange)
-            group_box.setLayout(QVBoxLayout())
-            exchange_keys = self.api_keys.get(exchange, {})
+        for exchange in EXCHANGES:
+            exchange_box = QGroupBox(exchange)
+            exchange_box.setCheckable(True)
+            exchange_box.setChecked(exchange in self.selected_exchanges)
+            exchange_box.setLayout(QVBoxLayout())
 
+            exchange_keys = self.api_keys.get(exchange, {})
             for sub_label, creds in exchange_keys.items():
                 sub_box = QGroupBox(sub_label)
                 sub_box.setCheckable(True)
@@ -182,9 +185,9 @@ class SettingsTab(QWidget):
                 sub_box.layout().addRow("API Secret:", api_secret_input)
                 sub_box.layout().addRow(save_btn)
 
-                group_box.layout().addWidget(sub_box)
+                exchange_box.layout().addWidget(sub_box)
 
-            container.layout().addWidget(group_box)
+            container.layout().addWidget(exchange_box)
 
         scroll_area.setWidget(container)
         layout = QVBoxLayout()
