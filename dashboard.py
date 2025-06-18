@@ -1,7 +1,7 @@
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QLabel, QPushButton,
     QCheckBox, QTableWidget, QTableWidgetItem, QTabWidget, QComboBox, QLineEdit,
-    QHBoxLayout, QStackedWidget, QMessageBox, QGroupBox
+    QHBoxLayout, QStackedWidget, QMessageBox, QGroupBox, QScrollArea
 )
 from PyQt6.QtCore import Qt
 import sys
@@ -142,14 +142,17 @@ class ExchangeTab(QWidget):
 class SettingsTab(QWidget):
     def __init__(self):
         super().__init__()
-        self.setLayout(QVBoxLayout())
+        scroll_area = QScrollArea()
+        scroll_area.setWidgetResizable(True)
+
+        container = QWidget()
+        container.setLayout(QVBoxLayout())
+
         self.api_keys = load_api_keys()
         self.user_prefs = load_user_prefs()
         self.selected_exchanges = self.user_prefs.get("selected_exchanges", EXCHANGES)
-        self.build_ui()
 
-    def build_ui(self):
-        self.layout().addWidget(QLabel("Edit API Keys:"))
+        container.layout().addWidget(QLabel("Edit API Keys:"))
         for exchange in self.selected_exchanges:
             box = QGroupBox(exchange)
             box.setLayout(QVBoxLayout())
@@ -174,13 +177,18 @@ class SettingsTab(QWidget):
             box.layout().addWidget(key_field)
             box.layout().addWidget(secret_field)
             box.layout().addWidget(save_btn)
-            self.layout().addWidget(box)
+            container.layout().addWidget(box)
+
+        scroll_area.setWidget(container)
+        layout = QVBoxLayout()
+        layout.addWidget(scroll_area)
+        self.setLayout(layout)
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("QuickTrade")
-        self.resize(1024, 700)
+        self.resize(1024, 650)
 
         self.tabs = QTabWidget()
         self.setCentralWidget(self.tabs)
