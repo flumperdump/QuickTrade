@@ -1,7 +1,7 @@
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QLabel, QPushButton,
     QCheckBox, QTableWidget, QTableWidgetItem, QTabWidget, QComboBox, QLineEdit,
-    QHBoxLayout, QStackedWidget, QMessageBox, QGroupBox, QScrollArea
+    QHBoxLayout, QStackedWidget, QMessageBox, QGroupBox, QScrollArea, QFormLayout
 )
 from PyQt6.QtCore import Qt
 import sys
@@ -154,30 +154,37 @@ class SettingsTab(QWidget):
 
         container.layout().addWidget(QLabel("Edit API Keys:"))
         for exchange in self.selected_exchanges:
-            box = QGroupBox(exchange)
-            box.setLayout(QVBoxLayout())
+            group_box = QGroupBox(exchange)
+            group_box.setLayout(QVBoxLayout())
+            exchange_keys = self.api_keys.get(exchange, {})
 
-            key_field = QLineEdit(self.api_keys.get(exchange, {}).get("api_key", ""))
-            key_field.setPlaceholderText("API Key")
-            secret_field = QLineEdit(self.api_keys.get(exchange, {}).get("api_secret", ""))
-            secret_field.setPlaceholderText("API Secret")
-            secret_field.setEchoMode(QLineEdit.EchoMode.Password)
+            for sub_label, creds in exchange_keys.items():
+                sub_box = QGroupBox(sub_label)
+                sub_box.setCheckable(True)
+                sub_box.setChecked(False)
+                sub_box.setLayout(QFormLayout())
 
-            save_btn = QPushButton("Save")
-            def save_key(exchange=exchange, key_field=key_field, secret_field=secret_field):
-                self.api_keys[exchange] = {
-                    "api_key": key_field.text(),
-                    "api_secret": secret_field.text()
-                }
-                save_api_keys(self.api_keys)
-                QMessageBox.information(self, "Saved", f"API keys for {exchange} saved.")
+                api_key_input = QLineEdit(creds.get("api_key", ""))
+                api_secret_input = QLineEdit(creds.get("api_secret", ""))
+                api_secret_input.setEchoMode(QLineEdit.EchoMode.Password)
 
-            save_btn.clicked.connect(save_key)
+                save_btn = QPushButton("Save")
+                def save_sub_key(ex=exchange, sub=sub_label, k=api_key_input, s=api_secret_input):
+                    if ex not in self.api_keys:
+                        self.api_keys[ex] = {}
+                    self.api_keys[ex][sub] = {"api_key": k.text(), "api_secret": s.text()}
+                    save_api_keys(self.api_keys)
+                    QMessageBox.information(self, "Saved", f"Keys for {ex} → {sub} saved.")
 
-            box.layout().addWidget(key_field)
-            box.layout().addWidget(secret_field)
-            box.layout().addWidget(save_btn)
-            container.layout().addWidget(box)
+                save_btn.clicked.connect(save_sub_key)
+
+                sub_box.layout().addRow("API Key:", api_key_input)
+                sub_box.layout().addRow("API Secret:", api_secret_input)
+                sub_box.layout().addRow(save_btn)
+
+                group_box.layout().addWidget(sub_box)
+
+            container.layout().addWidget(group_box)
 
         scroll_area.setWidget(container)
         layout = QVBoxLayout()
