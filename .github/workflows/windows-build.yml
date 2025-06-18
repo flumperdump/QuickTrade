@@ -29,7 +29,3 @@ jobs:
         with:
           name: QuickTrade.exe
           path: dist/QuickTrade.exe
-
-        with:
-          name: QuickTrade.exe
-          path: dist/QuickTrade.exe
