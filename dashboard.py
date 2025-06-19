@@ -1,7 +1,7 @@
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QLabel, QPushButton,
     QCheckBox, QTreeWidget, QTreeWidgetItem, QHBoxLayout, QMessageBox, QScrollArea,
-    QComboBox
+    QDialog, QListWidget, QListWidgetItem, QDialogButtonBox
 )
 from PyQt6.QtCore import Qt
 import sys
@@ -36,36 +36,56 @@ def save_api_keys(keys):
     with open(API_KEYS_FILE, 'w') as f:
         json.dump(keys, f, indent=4)
 
+class ExchangeSelectorDialog(QDialog):
+    def __init__(self, selected_exchanges):
+        super().__init__()
+        self.setWindowTitle("Choose Exchanges")
+        self.setMinimumWidth(300)
+        layout = QVBoxLayout()
+        self.list_widget = QListWidget()
+
+        for ex in EXCHANGES:
+            item = QListWidgetItem(ex)
+            item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable)
+            item.setCheckState(Qt.CheckState.Checked if ex in selected_exchanges else Qt.CheckState.Unchecked)
+            self.list_widget.addItem(item)
+
+        layout.addWidget(self.list_widget)
+
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Yes | QDialogButtonBox.StandardButton.No)
+        buttons.accepted.connect(self.accept)
+        buttons.rejected.connect(self.reject)
+        layout.addWidget(buttons)
+
+        self.setLayout(layout)
+
+    def get_selected_exchanges(self):
+        return [self.list_widget.item(i).text() for i in range(self.list_widget.count())
+                if self.list_widget.item(i).checkState() == Qt.CheckState.Checked]
+
 class DashboardTab(QWidget):
     def __init__(self):
         super().__init__()
         self.setLayout(QVBoxLayout())
-
-        # Theme Toggle
-        self.theme_toggle = QPushButton("🌞")
-        self.theme_toggle.setFixedSize(32, 32)
-        self.theme_toggle.clicked.connect(self.toggle_theme)
-        self.current_theme = "dark"
-
-        header_layout = QHBoxLayout()
-        header_layout.addStretch()
-        header_layout.addWidget(self.theme_toggle)
-        self.layout().addLayout(header_layout)
 
         self.total_label = QLabel("💰 Total Asset Value: USD $0.00")
         self.total_label.setStyleSheet("font-size: 18px; font-weight: bold;")
         self.layout().addWidget(self.total_label)
 
         controls_layout = QHBoxLayout()
-        self.dust_filter = QCheckBox("Show Dust (USD <1)")
+        self.dust_filter = QCheckBox("Show Dust (<$1)")
         self.dust_filter.setChecked(False)
         self.dust_filter.stateChanged.connect(self.update_tree)
 
         self.refresh_button = QPushButton("🔁 Refresh Assets")
         self.refresh_button.clicked.connect(self.load_balances)
 
+        self.exchange_select_button = QPushButton("⚙️ Choose Exchanges")
+        self.exchange_select_button.clicked.connect(self.open_exchange_selector)
+
         controls_layout.addWidget(self.dust_filter)
         controls_layout.addWidget(self.refresh_button)
+        controls_layout.addWidget(self.exchange_select_button)
         controls_layout.addStretch()
         self.layout().addLayout(controls_layout)
 
@@ -85,7 +105,16 @@ class DashboardTab(QWidget):
 
         self.balances = []
         self.load_balances()
-        self.apply_theme()
+
+    def open_exchange_selector(self):
+        prefs = load_user_prefs()
+        current = prefs.get("selected_exchanges", EXCHANGES)
+        dialog = ExchangeSelectorDialog(current)
+        if dialog.exec():
+            selected = dialog.get_selected_exchanges()
+            prefs["selected_exchanges"] = selected
+            save_user_prefs(prefs)
+            QMessageBox.information(self, "Exchanges Updated", "Exchange list has been updated. Restart to apply changes.")
 
     def load_balances(self):
         self.balances = [
@@ -118,15 +147,3 @@ class DashboardTab(QWidget):
             total += subtotal
 
         self.total_label.setText(f"💰 Total Asset Value: USD ${total:,.2f}")
-
-    def toggle_theme(self):
-        self.current_theme = "light" if self.current_theme == "dark" else "dark"
-        self.apply_theme()
-
-    def apply_theme(self):
-        if self.current_theme == "dark":
-            self.setStyleSheet("background-color: #0f172a; color: white;")
-            self.theme_toggle.setText("🌞")
-        else:
-            self.setStyleSheet("background-color: #f1f5f9; color: black;")
-            self.theme_toggle.setText("🌙")
