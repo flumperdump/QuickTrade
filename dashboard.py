@@ -1,6 +1,7 @@
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QLabel, QPushButton,
-    QCheckBox, QTreeWidget, QTreeWidgetItem, QHBoxLayout, QMessageBox, QScrollArea
+    QCheckBox, QTreeWidget, QTreeWidgetItem, QHBoxLayout, QMessageBox, QScrollArea,
+    QComboBox
 )
 from PyQt6.QtCore import Qt
 import sys
@@ -40,12 +41,23 @@ class DashboardTab(QWidget):
         super().__init__()
         self.setLayout(QVBoxLayout())
 
+        # Theme Toggle
+        self.theme_toggle = QPushButton("🌞")
+        self.theme_toggle.setFixedSize(32, 32)
+        self.theme_toggle.clicked.connect(self.toggle_theme)
+        self.current_theme = "dark"
+
+        header_layout = QHBoxLayout()
+        header_layout.addStretch()
+        header_layout.addWidget(self.theme_toggle)
+        self.layout().addLayout(header_layout)
+
         self.total_label = QLabel("💰 Total Asset Value: USD $0.00")
         self.total_label.setStyleSheet("font-size: 18px; font-weight: bold;")
         self.layout().addWidget(self.total_label)
 
         controls_layout = QHBoxLayout()
-        self.dust_filter = QCheckBox("Show Dust (<$1)")
+        self.dust_filter = QCheckBox("Show Dust (USD <1)")
         self.dust_filter.setChecked(False)
         self.dust_filter.stateChanged.connect(self.update_tree)
 
@@ -73,6 +85,7 @@ class DashboardTab(QWidget):
 
         self.balances = []
         self.load_balances()
+        self.apply_theme()
 
     def load_balances(self):
         self.balances = [
@@ -105,3 +118,15 @@ class DashboardTab(QWidget):
             total += subtotal
 
         self.total_label.setText(f"💰 Total Asset Value: USD ${total:,.2f}")
+
+    def toggle_theme(self):
+        self.current_theme = "light" if self.current_theme == "dark" else "dark"
+        self.apply_theme()
+
+    def apply_theme(self):
+        if self.current_theme == "dark":
+            self.setStyleSheet("background-color: #0f172a; color: white;")
+            self.theme_toggle.setText("🌞")
+        else:
+            self.setStyleSheet("background-color: #f1f5f9; color: black;")
+            self.theme_toggle.setText("🌙")
