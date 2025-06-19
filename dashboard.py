@@ -1,7 +1,7 @@
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QLabel, QPushButton,
     QCheckBox, QTreeWidget, QTreeWidgetItem, QHBoxLayout, QMessageBox, QScrollArea,
-    QDialog, QListWidget, QListWidgetItem, QDialogButtonBox
+    QDialog, QListWidget, QListWidgetItem, QDialogButtonBox, QTabWidget, QLineEdit, QGroupBox
 )
 from PyQt6.QtCore import Qt
 import sys
@@ -147,3 +147,19 @@ class DashboardTab(QWidget):
             total += subtotal
 
         self.total_label.setText(f"💰 Total Asset Value: USD ${total:,.2f}")
+
+class MainWindow(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("QuickTrade")
+        self.resize(1024, 650)
+
+        self.tabs = QTabWidget()
+        self.setCentralWidget(self.tabs)
+
+        self.dashboard_tab = DashboardTab()
+        self.tabs.addTab(self.dashboard_tab, "Dashboard")
+
+        # Placeholder: other tabs will be added here
+        self.settings_tab = QWidget()  # Replace with real SettingsTab class
+        self.tabs.addTab(self.settings_tab, "Settings")
