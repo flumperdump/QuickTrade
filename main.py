@@ -1,40 +1,41 @@
-import sys
-import os
-import json
 from PyQt6.QtWidgets import QApplication
-from dashboard import MainWindow
-from setup_wizard import SetupWizard
+import sys
+from dashboard import DashboardTab
+from settings_ui import SettingsTab  # if separated, else remove this line
+from PyQt6.QtWidgets import QMainWindow, QTabWidget
+from utils import load_user_prefs  # wherever your prefs are stored
+from exchange_tab import ExchangeTab  # this assumes exchange tabs are in their own file
 
-CONFIG_PATH = "config"
-USER_PREFS_FILE = os.path.join(CONFIG_PATH, "user_prefs.json")
-os.makedirs(CONFIG_PATH, exist_ok=True)
+EXCHANGES = ["Bybit", "Kraken", "Binance", "KuCoin", "Coinbase", "MEXC", "Bitget", "Crypto.com", "Hyperliquid"]
 
-def run_main_app():
-    window = MainWindow()
-    window.show()
-    return window
+class MainWindow(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("QuickTrade")
+        self.resize(1024, 650)
 
-def run_setup(app):
-    def on_complete():
-        global main_window
-        main_window = run_main_app()
+        self.tabs = QTabWidget()
+        self.setCentralWidget(self.tabs)
 
-    wizard = SetupWizard(on_complete)
-    wizard.show()
-    return wizard
+        self.dashboard = DashboardTab()
+        self.tabs.addTab(self.dashboard, "Dashboard")
+
+        self.exchange_tabs = {}
+        prefs = load_user_prefs()
+        selected_exchanges = prefs.get("selected_exchanges", EXCHANGES)
+
+        for name in selected_exchanges:
+            tab = ExchangeTab(name)
+            self.exchange_tabs[name] = tab
+            self.tabs.addTab(tab, name)
+
+        self.settings_tab = SettingsTab()
+        self.tabs.addTab(self.settings_tab, "Settings")
+
+        self.tabs.setCurrentIndex(0)
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    prefs_exist = os.path.exists(USER_PREFS_FILE)
-    selected = []
-
-    if prefs_exist:
-        with open(USER_PREFS_FILE, 'r') as f:
-            selected = json.load(f).get("selected_exchanges", [])
-
-    if selected:
-        main_window = run_main_app()
-    else:
-        setup_wizard = run_setup(app)
-
+    window = MainWindow()
+    window.show()
     sys.exit(app.exec())
