@@ -52,11 +52,16 @@ class ExchangeSelectorDialog(QDialog):
 
         layout.addWidget(self.list_widget)
 
-        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Yes | QDialogButtonBox.StandardButton.No)
-        buttons.accepted.connect(self.accept)
-        buttons.rejected.connect(self.reject)
-        layout.addWidget(buttons)
+        confirm_layout = QHBoxLayout()
+        confirm_label = QLabel("Confirm?")
+        self.button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Yes | QDialogButtonBox.StandardButton.No)
+        self.button_box.accepted.connect(self.accept)
+        self.button_box.rejected.connect(self.reject)
 
+        confirm_layout.addWidget(confirm_label)
+        confirm_layout.addWidget(self.button_box)
+
+        layout.addLayout(confirm_layout)
         self.setLayout(layout)
 
     def get_selected_exchanges(self):
@@ -68,7 +73,7 @@ class DashboardTab(QWidget):
         super().__init__()
         self.setLayout(QVBoxLayout())
 
-        self.total_label = QLabel("💰 Total Asset Value: USD $0.00")
+        self.total_label = QLabel("\ud83d\udcb0 Total Asset Value: USD $0.00")
         self.total_label.setStyleSheet("font-size: 18px; font-weight: bold;")
         self.layout().addWidget(self.total_label)
 
@@ -77,15 +82,11 @@ class DashboardTab(QWidget):
         self.dust_filter.setChecked(False)
         self.dust_filter.stateChanged.connect(self.update_tree)
 
-        self.refresh_button = QPushButton("🔁 Refresh Assets")
+        self.refresh_button = QPushButton("\ud83d\udd01 Refresh Assets")
         self.refresh_button.clicked.connect(self.load_balances)
-
-        self.exchange_select_button = QPushButton("⚙️ Choose Exchanges")
-        self.exchange_select_button.clicked.connect(self.open_exchange_selector)
 
         controls_layout.addWidget(self.dust_filter)
         controls_layout.addWidget(self.refresh_button)
-        controls_layout.addWidget(self.exchange_select_button)
         controls_layout.addStretch()
         self.layout().addLayout(controls_layout)
 
@@ -105,16 +106,6 @@ class DashboardTab(QWidget):
 
         self.balances = []
         self.load_balances()
-
-    def open_exchange_selector(self):
-        prefs = load_user_prefs()
-        current = prefs.get("selected_exchanges", EXCHANGES)
-        dialog = ExchangeSelectorDialog(current)
-        if dialog.exec():
-            selected = dialog.get_selected_exchanges()
-            prefs["selected_exchanges"] = selected
-            save_user_prefs(prefs)
-            QMessageBox.information(self, "Exchanges Updated", "Exchange list has been updated. Restart to apply changes.")
 
     def load_balances(self):
         self.balances = [
@@ -138,7 +129,7 @@ class DashboardTab(QWidget):
         total = 0.0
         for exchange, items in exchange_totals.items():
             subtotal = sum(x["usd_value"] for x in items)
-            ex_node = QTreeWidgetItem([f"{exchange} — ${subtotal:,.2f}"])
+            ex_node = QTreeWidgetItem([f"{exchange} \u2014 ${subtotal:,.2f}"])
             for b in items:
                 child = QTreeWidgetItem([b["subaccount"], b["asset"], f"${b['usd_value']:.2f}"])
                 ex_node.addChild(child)
@@ -146,7 +137,7 @@ class DashboardTab(QWidget):
             ex_node.setExpanded(True)
             total += subtotal
 
-        self.total_label.setText(f"💰 Total Asset Value: USD ${total:,.2f}")
+        self.total_label.setText(f"\ud83d\udcb0 Total Asset Value: USD ${total:,.2f}")
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -160,6 +151,13 @@ class MainWindow(QMainWindow):
         self.dashboard_tab = DashboardTab()
         self.tabs.addTab(self.dashboard_tab, "Dashboard")
 
-        # Placeholder: other tabs will be added here
+        prefs = load_user_prefs()
+        selected_exchanges = prefs.get("selected_exchanges", EXCHANGES)
+        self.exchange_tabs = {}
+        for name in selected_exchanges:
+            tab = QWidget()  # Replace with ExchangeTab(name) when ExchangeTab is available
+            self.exchange_tabs[name] = tab
+            self.tabs.addTab(tab, name)
+
         self.settings_tab = QWidget()  # Replace with real SettingsTab class
         self.tabs.addTab(self.settings_tab, "Settings")
